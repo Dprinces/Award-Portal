@@ -2,7 +2,7 @@
   "name": "sandwich-award-system",
   "version": "1.0.0",
   "scripts": {
-    "build": "cd frontend && npm install && npm run build",
+    "build": "echo 'Starting build process...' && ls -la && echo 'Changing to frontend directory...' && cd frontend && echo 'Installing dependencies...' && npm install && echo 'Running build...' && npm run build && echo 'Build completed successfully!'",
     "start": "npx serve frontend/build -s -l 3000"
   },
   "dependencies": {
