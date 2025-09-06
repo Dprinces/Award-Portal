@@ -92,25 +92,9 @@ const nomineeSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
-  campaignStatement: {
+  image: {
     type: String,
-    maxlength: [2000, 'Campaign statement cannot exceed 2000 characters']
-  },
-  socialMedia: {
-    instagram: {
-      type: String,
-      match: [/^@?[a-zA-Z0-9._]+$/, 'Please provide a valid Instagram username']
-    },
-    twitter: {
-      type: String,
-      match: [/^@?[a-zA-Z0-9_]+$/, 'Please provide a valid Twitter username']
-    },
-    facebook: {
-      type: String
-    },
-    linkedin: {
-      type: String
-    }
+    default: null
   },
   statistics: {
     totalVotes: {

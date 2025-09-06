@@ -39,8 +39,13 @@ const Login = () => {
     setError("");
 
     try {
-      await login(formData.email, formData.password);
-      navigate(from, { replace: true });
+      const result = await login(formData.email, formData.password);
+      
+      if (result.success) {
+        navigate(from, { replace: true });
+      } else {
+        setError(result.error || "Login failed. Please try again.");
+      }
     } catch (err) {
       setError(
         err.response?.data?.message || "Login failed. Please try again."

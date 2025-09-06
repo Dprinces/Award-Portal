@@ -11,6 +11,8 @@ import {
   UserIcon,
   AcademicCapIcon,
   HandThumbUpIcon,
+  PhotoIcon,
+  CloudArrowUpIcon,
 } from "@heroicons/react/24/outline";
 import { useAuth } from "../../contexts/AuthContext";
 import api from "../../services/api";
@@ -32,14 +34,10 @@ const NomineesManagement = () => {
     category: "",
     reason: "",
     achievements: "",
-    campaignStatement: "",
-    socialMediaLinks: {
-      facebook: "",
-      twitter: "",
-      instagram: "",
-      linkedin: ""
-    }
+    image: null
   });
+  const [dragActive, setDragActive] = useState(false);
+  const [imagePreview, setImagePreview] = useState(null);
 
   // Queries
   const {
@@ -75,10 +73,16 @@ const NomineesManagement = () => {
   // Mutations
   const nomineeMutation = useMutation({
     mutationFn: async (nomineeData) => {
+      const config = {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      };
+      
       if (selectedNominee) {
-        return api.put(`/nominees/${selectedNominee._id}`, nomineeData);
+        return api.put(`/nominees/${selectedNominee._id}`, nomineeData, config);
       } else {
-        return api.post("/nominees", nomineeData);
+        return api.post("/nominees", nomineeData, config);
       }
     },
     onSuccess: () => {
@@ -159,28 +163,18 @@ const NomineesManagement = () => {
         category: nominee.category?._id || nominee.category || "",
         reason: nominee.reason || "",
         achievements: nominee.achievements || "",
-        campaignStatement: nominee.campaignStatement || "",
-        socialMediaLinks: {
-          facebook: nominee.socialMediaLinks?.facebook || "",
-          twitter: nominee.socialMediaLinks?.twitter || "",
-          instagram: nominee.socialMediaLinks?.instagram || "",
-          linkedin: nominee.socialMediaLinks?.linkedin || ""
-        }
+        image: null
       });
+      setImagePreview(nominee.image || null);
     } else {
       setNomineeForm({
         student: "",
         category: "",
         reason: "",
         achievements: "",
-        campaignStatement: "",
-        socialMediaLinks: {
-          facebook: "",
-          twitter: "",
-          instagram: "",
-          linkedin: ""
-        }
+        image: null
       });
+      setImagePreview(null);
     }
     setShowModal(true);
   };
@@ -193,23 +187,77 @@ const NomineesManagement = () => {
       category: "",
       reason: "",
       achievements: "",
-      campaignStatement: "",
-      socialMediaLinks: {
-        facebook: "",
-        twitter: "",
-        instagram: "",
-        linkedin: ""
-      }
+      image: null
     });
+    setImagePreview(null);
+    setDragActive(false);
+  };
+
+  // File upload handlers
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileSelect(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleFileSelect = (file) => {
+    if (file && file.type.startsWith('image/')) {
+      setNomineeForm({ ...nomineeForm, image: file });
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      toast.error('Please select a valid image file');
+    }
+  };
+
+  const handleFileInputChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      handleFileSelect(e.target.files[0]);
+    }
+  };
+
+  const removeImage = () => {
+    setNomineeForm({ ...nomineeForm, image: null });
+    setImagePreview(null);
   };
 
   const handleSubmit = () => {
     if (!nomineeForm.student || !nomineeForm.category || !nomineeForm.reason.trim() || nomineeForm.reason.trim().length < 50) {
-      toast.error("Please fill in all required fields. Reason must be at least 50 characters.");
+      toast.error("Please fill in all required fields and ensure reason is at least 50 characters");
       return;
     }
 
-    nomineeMutation.mutate(nomineeForm);
+    // Create FormData for file upload
+    const formData = new FormData();
+    formData.append('student', nomineeForm.student);
+    formData.append('category', nomineeForm.category);
+    formData.append('reason', nomineeForm.reason);
+    formData.append('achievements', nomineeForm.achievements);
+    
+    if (nomineeForm.image) {
+      formData.append('image', nomineeForm.image);
+    }
+
+    nomineeMutation.mutate(formData);
   };
 
   const handleDelete = (nominee) => {
@@ -709,87 +757,68 @@ const NomineesManagement = () => {
 
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Campaign Statement
+                        Nominee Picture
                       </label>
-                      <textarea
-                        value={nomineeForm.campaignStatement}
-                        onChange={(e) =>
-                          setNomineeForm({
-                            ...nomineeForm,
-                            campaignStatement: e.target.value,
-                          })
-                        }
-                        rows={3}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
-                        placeholder="Campaign statement or message..."
-                      />
-                    </div>
-
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Social Media Links (Optional)
-                      </label>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      
+                      {/* File Upload Area */}
+                      <div
+                        className={`relative border-2 border-dashed rounded-xl p-6 transition-all duration-200 ${
+                          dragActive
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-300 hover:border-gray-400'
+                        }`}
+                        onDragEnter={handleDrag}
+                        onDragLeave={handleDrag}
+                        onDragOver={handleDrag}
+                        onDrop={handleDrop}
+                      >
                         <input
-                          type="url"
-                          value={nomineeForm.socialMediaLinks.facebook}
-                          onChange={(e) =>
-                            setNomineeForm({
-                              ...nomineeForm,
-                              socialMediaLinks: {
-                                ...nomineeForm.socialMediaLinks,
-                                facebook: e.target.value
-                              }
-                            })
-                          }
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                          placeholder="Facebook URL"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFileInputChange}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                         />
-                        <input
-                          type="url"
-                          value={nomineeForm.socialMediaLinks.twitter}
-                          onChange={(e) =>
-                            setNomineeForm({
-                              ...nomineeForm,
-                              socialMediaLinks: {
-                                ...nomineeForm.socialMediaLinks,
-                                twitter: e.target.value
-                              }
-                            })
-                          }
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                          placeholder="Twitter URL"
-                        />
-                        <input
-                          type="url"
-                          value={nomineeForm.socialMediaLinks.instagram}
-                          onChange={(e) =>
-                            setNomineeForm({
-                              ...nomineeForm,
-                              socialMediaLinks: {
-                                ...nomineeForm.socialMediaLinks,
-                                instagram: e.target.value
-                              }
-                            })
-                          }
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                          placeholder="Instagram URL"
-                        />
-                        <input
-                          type="url"
-                          value={nomineeForm.socialMediaLinks.linkedin}
-                          onChange={(e) =>
-                            setNomineeForm({
-                              ...nomineeForm,
-                              socialMediaLinks: {
-                                ...nomineeForm.socialMediaLinks,
-                                linkedin: e.target.value
-                              }
-                            })
-                          }
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                          placeholder="LinkedIn URL"
-                        />
+                        
+                        {imagePreview ? (
+                          <div className="text-center">
+                            <div className="relative inline-block">
+                              <img
+                                src={imagePreview}
+                                alt="Preview"
+                                className="w-32 h-32 object-cover rounded-lg shadow-md"
+                              />
+                              <button
+                                type="button"
+                                onClick={removeImage}
+                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition-colors"
+                              >
+                                <XMarkIcon className="w-4 h-4" />
+                              </button>
+                            </div>
+                            <p className="text-sm text-gray-600 mt-2">
+                              Click to change or drag a new image
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="text-center">
+                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                              {dragActive ? (
+                                <CloudArrowUpIcon className="w-8 h-8 text-blue-500" />
+                              ) : (
+                                <PhotoIcon className="w-8 h-8 text-gray-400" />
+                              )}
+                            </div>
+                            <p className="text-lg font-medium text-gray-900 mb-2">
+                              {dragActive ? 'Drop image here' : 'Upload nominee picture'}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              Drag and drop an image, or click to browse
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              Supports: JPG, PNG, GIF (Max 5MB)
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

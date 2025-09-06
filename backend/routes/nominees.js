@@ -1,5 +1,8 @@
 const express = require('express');
 const { body, param, query, validationResult } = require('express-validator');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const { auth } = require('../middleware/auth');
 const Nominee = require('../models/Nominee');
 const Category = require('../models/Category');
@@ -8,6 +11,39 @@ const Vote = require('../models/Vote');
 const mongoose = require('mongoose');
 
 const router = express.Router();
+
+// Ensure uploads directory exists
+const uploadsDir = path.join(__dirname, '../uploads/nominees');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadsDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'nominee-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const fileFilter = (req, file, cb) => {
+  if (file.mimetype.startsWith('image/')) {
+    cb(null, true);
+  } else {
+    cb(new Error('Only image files are allowed'), false);
+  }
+};
+
+const upload = multer({
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB limit
+  }
+});
 
 /**
  * @route   GET /api/nominees
@@ -528,6 +564,7 @@ router.get('/:id', [
  */
 router.post('/', [
   auth,
+  upload.single('image'),
   [
     body('student')
       .isMongoId()
@@ -543,32 +580,7 @@ router.post('/', [
       .optional()
       .trim()
       .isLength({ max: 2000 })
-      .withMessage('Achievements must not exceed 2000 characters'),
-    body('campaignStatement')
-      .optional()
-      .trim()
-      .isLength({ max: 1500 })
-      .withMessage('Campaign statement must not exceed 1500 characters'),
-    body('socialMediaLinks')
-      .optional()
-      .isObject()
-      .withMessage('Social media links must be an object'),
-    body('socialMediaLinks.facebook')
-      .optional()
-      .isURL()
-      .withMessage('Facebook link must be a valid URL'),
-    body('socialMediaLinks.twitter')
-      .optional()
-      .isURL()
-      .withMessage('Twitter link must be a valid URL'),
-    body('socialMediaLinks.instagram')
-      .optional()
-      .isURL()
-      .withMessage('Instagram link must be a valid URL'),
-    body('socialMediaLinks.linkedin')
-      .optional()
-      .isURL()
-      .withMessage('LinkedIn link must be a valid URL')
+      .withMessage('Achievements must not exceed 2000 characters')
   ]
 ], async (req, res) => {
   try {
@@ -586,10 +598,14 @@ router.post('/', [
       student,
       category,
       reason,
-      achievements,
-      campaignStatement,
-      socialMediaLinks
+      achievements
     } = req.body;
+
+    // Handle image upload
+    let imagePath = null;
+    if (req.file) {
+      imagePath = `/uploads/nominees/${req.file.filename}`;
+    }
 
     // Check if student exists and is verified
     const studentUser = await User.findById(student);
@@ -659,8 +675,7 @@ router.post('/', [
       category,
       reason: reason.trim(),
       achievements: achievements?.trim(),
-      campaignStatement: campaignStatement?.trim(),
-      socialMediaLinks,
+      image: imagePath,
       nominatedBy: req.user.id,
       status: req.user.role === 'admin' ? 'approved' : 'pending'
     });
@@ -707,6 +722,7 @@ router.post('/', [
  */
 router.put('/:id', [
   auth,
+  upload.single('image'),
   [
     param('id')
       .isMongoId()
@@ -721,15 +737,6 @@ router.put('/:id', [
       .trim()
       .isLength({ max: 2000 })
       .withMessage('Achievements must not exceed 2000 characters'),
-    body('campaignStatement')
-      .optional()
-      .trim()
-      .isLength({ max: 1500 })
-      .withMessage('Campaign statement must not exceed 1500 characters'),
-    body('socialMediaLinks')
-      .optional()
-      .isObject()
-      .withMessage('Social media links must be an object'),
     body('status')
       .optional()
       .isIn(['pending', 'approved', 'rejected'])
@@ -749,6 +756,11 @@ router.put('/:id', [
 
     const { id } = req.params;
     const updateData = req.body;
+
+    // Handle image upload
+    if (req.file) {
+      updateData.image = `/uploads/nominees/${req.file.filename}`;
+    }
 
     // Find nominee
     const nominee = await Nominee.findById(id).populate('student');

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import toast from 'react-hot-toast';
@@ -107,6 +107,36 @@ const authReducer = (state, action) => {
 export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
+  // Logout function
+  const logout = useCallback(() => {
+    Cookies.remove('token');
+    dispatch({ type: AUTH_ACTIONS.LOGOUT });
+    toast.success('Logged out successfully');
+  }, []);
+
+  // Load user function
+  const loadUser = useCallback(async () => {
+    try {
+      dispatch({ type: AUTH_ACTIONS.LOAD_USER_START });
+      
+      const response = await authAPI.getCurrentUser();
+      
+      dispatch({
+        type: AUTH_ACTIONS.LOAD_USER_SUCCESS,
+        payload: { user: response.data.user }
+      });
+      
+    } catch (error) {
+      dispatch({
+        type: AUTH_ACTIONS.LOAD_USER_FAILURE,
+        payload: error.response?.data?.message || 'Failed to load user'
+      });
+      
+      // Remove invalid token
+      Cookies.remove('token');
+    }
+  }, []);
+
   // Set up axios interceptors
   useEffect(() => {
     // Request interceptor to add token to headers
@@ -141,7 +171,7 @@ export const AuthProvider = ({ children }) => {
       axios.interceptors.request.eject(requestInterceptor);
       axios.interceptors.response.eject(responseInterceptor);
     };
-  }, [state.token]);
+  }, [state.token, logout]);
 
   // Load user on app start
   useEffect(() => {
@@ -155,7 +185,7 @@ export const AuthProvider = ({ children }) => {
         payload: null 
       });
     }
-  }, []);
+  }, [loadUser, state.user]);
 
   // Login function
   const login = async (email, password) => {
@@ -240,35 +270,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Load user function
-  const loadUser = async () => {
-    try {
-      dispatch({ type: AUTH_ACTIONS.LOAD_USER_START });
-      
-      const response = await authAPI.getCurrentUser();
-      
-      dispatch({
-        type: AUTH_ACTIONS.LOAD_USER_SUCCESS,
-        payload: { user: response.data.user }
-      });
-      
-    } catch (error) {
-      dispatch({
-        type: AUTH_ACTIONS.LOAD_USER_FAILURE,
-        payload: error.response?.data?.message || 'Failed to load user'
-      });
-      
-      // Remove invalid token
-      Cookies.remove('token');
-    }
-  };
 
-  // Logout function
-  const logout = () => {
-    Cookies.remove('token');
-    dispatch({ type: AUTH_ACTIONS.LOGOUT });
-    toast.success('Logged out successfully');
-  };
 
   // Update user function
   const updateUser = (userData) => {

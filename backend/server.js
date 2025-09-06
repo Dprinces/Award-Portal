@@ -45,6 +45,7 @@ const corsOptions = {
       "http://localhost:3001",
       "http://127.0.0.1:3000",
       "http://127.0.0.1:3001",
+      "https://award-portal.vercel.app",
       process.env.FRONTEND_URL,
     ].filter(Boolean);
 
@@ -79,7 +80,7 @@ if (process.env.NODE_ENV === "development") {
 // Rate limiting
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  max: process.env.NODE_ENV === 'development' ? 1000 : 100, // Higher limit for development
   message: {
     success: false,
     message: "Too many requests from this IP, please try again later.",
@@ -90,7 +91,7 @@ const generalLimiter = rateLimit({
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // Limit each IP to 200 auth requests per windowMs (increased for development)
+  max: process.env.NODE_ENV === 'development' ? 100000 : 200, // Much higher limit for development
   message: {
     success: false,
     message: "Too many authentication attempts, please try again later.",
@@ -162,6 +163,9 @@ app.get("/health", (req, res) => {
     environment: process.env.NODE_ENV || "development",
   });
 });
+
+// Serve static files for uploads
+app.use('/uploads', express.static('uploads'));
 
 // API routes
 app.use("/api/auth", require("./routes/auth"));
