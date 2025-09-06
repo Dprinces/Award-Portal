@@ -185,7 +185,7 @@ export const AuthProvider = ({ children }) => {
         payload: null 
       });
     }
-  }, [loadUser, state.user]);
+  }, [loadUser]); // Removed state.user dependency to prevent infinite loop
 
   // Login function
   const login = async (email, password) => {
