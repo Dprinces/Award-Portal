@@ -1,10 +1,17 @@
 {
+  "name": "sandwich-award-system",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "cd frontend && npm run build",
+    "start": "npx serve frontend/build -s -l 3000"
+  },
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.2",
     "@mui/material": "^7.3.2",
     "@mui/x-date-pickers": "^8.11.1",
-    "date-fns": "^4.1.0"
+    "date-fns": "^4.1.0",
+    "serve": "^14.2.1"
   }
 }
