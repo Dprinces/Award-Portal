@@ -261,21 +261,30 @@ const NomineesManagement = () => {
   };
 
   const handleDelete = (nominee) => {
-    if (window.confirm(`Are you sure you want to delete "${nominee.name}"?`)) {
+    const studentName = nominee.student?.firstName && nominee.student?.lastName 
+        ? `${nominee.student.firstName} ${nominee.student.lastName}`
+        : nominee.student?.firstName || nominee.student?.lastName || 'this nominee';
+    if (window.confirm(`Are you sure you want to delete "${studentName}"?`)) {
       deleteNomineeMutation.mutate(nominee._id);
     }
     setOpenMenuId(null);
   };
 
   const handleApprove = (nominee) => {
-    if (window.confirm(`Are you sure you want to approve "${nominee.name}"?`)) {
+    const studentName = nominee.student?.firstName && nominee.student?.lastName 
+        ? `${nominee.student.firstName} ${nominee.student.lastName}`
+        : nominee.student?.firstName || nominee.student?.lastName || 'this nominee';
+    if (window.confirm(`Are you sure you want to approve "${studentName}"?`)) {
       approveNomineeMutation.mutate(nominee._id);
     }
     setOpenMenuId(null);
   };
 
   const handleReject = (nominee) => {
-    if (window.confirm(`Are you sure you want to reject "${nominee.name}"?`)) {
+    const studentName = nominee.student?.firstName && nominee.student?.lastName 
+        ? `${nominee.student.firstName} ${nominee.student.lastName}`
+        : nominee.student?.firstName || nominee.student?.lastName || 'this nominee';
+    if (window.confirm(`Are you sure you want to reject "${studentName}"?`)) {
       rejectNomineeMutation.mutate(nominee._id);
     }
     setOpenMenuId(null);
@@ -466,15 +475,17 @@ const NomineesManagement = () => {
                 <div className="relative h-48 overflow-hidden">
                   {nominee.image ? (
                     <img
-                      src={nominee.image}
-                      alt={nominee.name}
+                      src={`http://localhost:5000${nominee.image}`}
+                      alt={nominee.student?.firstName && nominee.student?.lastName 
+                        ? `${nominee.student.firstName} ${nominee.student.lastName}`
+                        : nominee.student?.firstName || nominee.student?.lastName || 'Student'}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
                       <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg">
                         <span className="text-2xl font-bold text-gray-600">
-                          {nominee.name.charAt(0)}
+                          {nominee.student?.firstName?.charAt(0) || nominee.student?.lastName?.charAt(0) || 'N'}
                         </span>
                       </div>
                     </div>
@@ -546,7 +557,9 @@ const NomineesManagement = () => {
                   {/* Header */}
                   <div className="mb-4">
                     <h3 className="text-xl font-semibold text-gray-900 mb-1">
-                      {nominee.name}
+                      {nominee.student?.firstName && nominee.student?.lastName 
+                        ? `${nominee.student.firstName} ${nominee.student.lastName}`
+                        : nominee.student?.firstName || nominee.student?.lastName || 'Unknown Student'}
                     </h3>
                     <p className="text-gray-600">
                       {getCategoryName(nominee.category._id || nominee.category)}
@@ -558,18 +571,18 @@ const NomineesManagement = () => {
                     <div className="flex items-center text-gray-600">
                       <AcademicCapIcon className="w-4 h-4 mr-2 text-blue-500" />
                       <span className="text-sm">
-                        {nominee.studentId} • {nominee.department}
+                        {nominee.student?.studentId || 'N/A'} • {nominee.student?.department || 'N/A'}
                       </span>
                     </div>
                     <div className="flex items-center text-gray-600">
                       <UserIcon className="w-4 h-4 mr-2 text-blue-500" />
-                      <span className="text-sm">Level {nominee.level}</span>
+                      <span className="text-sm">Level {nominee.student?.level || 'N/A'}</span>
                     </div>
                   </div>
 
                   {/* Description */}
                   <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                    {nominee.description || "No description provided"}
+                    {nominee.reason || "No nomination reason provided"}
                   </p>
 
                   {/* Status and Stats */}
@@ -583,7 +596,7 @@ const NomineesManagement = () => {
                     </span>
                     <div className="flex items-center text-gray-600">
                       <HandThumbUpIcon className="w-4 h-4 mr-1 text-blue-500" />
-                      <span className="text-sm">{nominee.voteCount || 0} votes</span>
+                      <span className="text-sm">{nominee.statistics?.totalVotes || 0} votes</span>
                     </div>
                   </div>
 
@@ -688,7 +701,7 @@ const NomineesManagement = () => {
                         <option value="">Select Student</option>
                         {(students || []).map((student) => (
                           <option key={student._id} value={student._id}>
-                            {student.name} ({student.email})
+                            {student.firstName} {student.lastName} ({student.studentId})
                           </option>
                         ))}
                       </select>

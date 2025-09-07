@@ -132,8 +132,8 @@ const trackVoteAttempt = async (req, res, next) => {
 // Validate vote amount middleware
 const validateVoteAmount = (req, res, next) => {
   const { amount } = req.body;
-  const minAmount = parseInt(process.env.MIN_VOTE_AMOUNT) || 50;
-  const maxAmount = parseInt(process.env.MAX_VOTE_AMOUNT) || 10000;
+  const minAmount = parseInt(process.env.MIN_VOTE_AMOUNT) || 100;
+  const maxAmount = parseInt(process.env.MAX_VOTE_AMOUNT) || 1000000; // Increased to ₦1,000,000
 
   if (!amount || typeof amount !== 'number') {
     return res.status(400).json({
@@ -152,7 +152,7 @@ const validateVoteAmount = (req, res, next) => {
   if (amount > maxAmount) {
     return res.status(400).json({
       success: false,
-      message: `Maximum vote amount is ₦${maxAmount}`
+      message: `Maximum vote amount is ₦${maxAmount.toLocaleString()}`
     });
   }
 

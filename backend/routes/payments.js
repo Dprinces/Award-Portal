@@ -1,6 +1,7 @@
 const express = require('express');
 const { body, param, query, validationResult } = require('express-validator');
 const { auth } = require('../middleware/auth');
+const { preventDuplicateVotes } = require('../middleware/security');
 const paymentService = require('../services/paymentService');
 const Payment = require('../models/Payment');
 const Vote = require('../models/Vote');
@@ -37,6 +38,7 @@ const webhookRateLimit = rateLimit({
 router.post('/initialize', [
   auth,
   paymentRateLimit,
+  preventDuplicateVotes,
   [
     body('nomineeId')
       .isMongoId()
@@ -61,6 +63,33 @@ router.post('/initialize', [
         success: false,
         message: 'Validation failed',
         errors: errors.array()
+      });
+    }
+
+    // Check user eligibility for voting
+    const user = req.user;
+    
+    // Check if user is verified
+    if (!user.isVerified) {
+      return res.status(403).json({
+        success: false,
+        message: 'Please verify your email before voting. Check your email for verification link.'
+      });
+    }
+
+    // Check if user account is active
+    if (!user.isActive) {
+      return res.status(403).json({
+        success: false,
+        message: 'Your account is not active. Please contact support.'
+      });
+    }
+
+    // Check if user has student ID (for student voting)
+    if (!user.studentId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only verified students can vote. Please update your profile with a valid student ID.'
       });
     }
 
@@ -193,8 +222,46 @@ router.get('/verify/:reference', [
 });
 
 /**
+ * @route   POST /api/payments/opay/callback
+ * @desc    Handle OPay callback
+ * @access  Public
+ */
+router.post('/opay/callback', [
+  webhookRateLimit,
+  express.json()
+], async (req, res) => {
+  try {
+    const payload = req.body;
+    
+    // Verify OPay signature
+    const signature = req.get('Authorization');
+    if (!signature) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing authorization header'
+      });
+    }
+
+    // Handle OPay callback
+    await paymentService.handleOPayCallback(payload, signature);
+
+    res.status(200).json({
+      success: true,
+      message: 'Callback processed successfully'
+    });
+
+  } catch (error) {
+    console.error('OPay callback processing error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Callback processing failed'
+    });
+  }
+});
+
+/**
  * @route   POST /api/payments/webhook
- * @desc    Handle Paystack webhook
+ * @desc    Handle legacy Paystack webhook (deprecated)
  * @access  Public (but verified)
  */
 router.post('/webhook', [
@@ -214,7 +281,7 @@ router.post('/webhook', [
     // Parse the payload
     const payload = JSON.parse(req.body.toString());
 
-    // Handle webhook
+    // Handle webhook (legacy support)
     await paymentService.handleWebhook(payload, signature);
 
     res.status(200).json({

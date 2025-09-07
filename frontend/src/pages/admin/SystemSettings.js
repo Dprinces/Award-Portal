@@ -39,8 +39,9 @@ const SystemSettings = () => {
     votingEnabled: true,
     
     // Payment Settings
-    paystackPublicKey: '',
-    paystackSecretKey: '',
+    opayMerchantId: '',
+    opayPublicKey: '',
+    opayPrivateKey: '',
     votePrice: 100, // in kobo
     paymentTimeout: 300, // seconds
     
@@ -415,31 +416,40 @@ const SystemSettings = () => {
                 {/* Payment Settings */}
                 {activeTab === 1 && (
                   <div className="space-y-8">
-                    {/* Paystack Settings */}
+                    {/* OPay Settings */}
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Paystack Gateway</h3>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">OPay Gateway</h3>
                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                         <div className="flex items-center">
                           <CreditCardIcon className="h-5 w-5 text-blue-400 mr-2" />
-                          <span className="text-blue-800">Configure Paystack payment gateway settings. Keep your secret key secure.</span>
+                          <span className="text-blue-800">Configure OPay payment gateway settings. Keep your private key secure.</span>
                         </div>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Paystack Public Key</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">OPay Merchant ID</label>
                           <input
                             type="text"
-                            value={settings.paystackPublicKey}
-                            onChange={(e) => setSettings({ ...settings, paystackPublicKey: e.target.value })}
+                            value={settings.opayMerchantId}
+                            onChange={(e) => setSettings({ ...settings, opayMerchantId: e.target.value })}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Paystack Secret Key</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">OPay Public Key</label>
+                          <input
+                            type="text"
+                            value={settings.opayPublicKey}
+                            onChange={(e) => setSettings({ ...settings, opayPublicKey: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">OPay Private Key</label>
                           <input
                             type="password"
-                            value={settings.paystackSecretKey}
-                            onChange={(e) => setSettings({ ...settings, paystackSecretKey: e.target.value })}
+                            value={settings.opayPrivateKey}
+                            onChange={(e) => setSettings({ ...settings, opayPrivateKey: e.target.value })}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           />
                         </div>

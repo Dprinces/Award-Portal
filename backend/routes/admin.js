@@ -675,4 +675,108 @@ async function generateSystemAlerts() {
   }
 }
 
+// @desc    Get system statistics
+// @route   GET /api/admin/system-stats
+// @access  Private/Admin
+router.get('/system-stats', async (req, res, next) => {
+  try {
+    const [totalUsers, totalNominees, totalVotes, totalRevenue] = await Promise.all([
+      User.countDocuments(),
+      Nominee.countDocuments(),
+      Vote.countDocuments({ status: 'verified' }),
+      Vote.aggregate([
+        { $match: { status: 'verified' } },
+        { $group: { _id: null, total: { $sum: '$amount' } } }
+      ])
+    ]);
+
+    const systemStats = {
+      totalUsers,
+      totalNominees,
+      totalVotes,
+      totalRevenue: totalRevenue[0]?.total || 0,
+      uptime: process.uptime(),
+      memoryUsage: process.memoryUsage(),
+      nodeVersion: process.version
+    };
+
+    res.status(200).json({
+      success: true,
+      data: systemStats
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @desc    Get system settings
+// @route   GET /api/admin/settings
+// @access  Private/Admin
+router.get('/settings', async (req, res, next) => {
+  try {
+    // Return default settings - in a real app, these would be stored in database
+    const settings = {
+      siteName: 'Sandwich Award Portal',
+      siteDescription: 'Student Excellence Recognition Platform',
+      votingEnabled: true,
+      registrationEnabled: true,
+      emailNotifications: true,
+      maintenanceMode: false,
+      maxVotesPerUser: 10,
+      votingStartDate: null,
+      votingEndDate: null
+    };
+
+    res.status(200).json({
+      success: true,
+      data: settings
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @desc    Update system settings
+// @route   PUT /api/admin/settings
+// @access  Private/Admin
+router.put('/settings', async (req, res, next) => {
+  try {
+    // In a real app, you would save these to database
+    const updatedSettings = req.body;
+    
+    res.status(200).json({
+      success: true,
+      message: 'Settings updated successfully',
+      data: updatedSettings
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @desc    Get API keys
+// @route   GET /api/admin/api-keys
+// @access  Private/Admin
+router.get('/api-keys', async (req, res, next) => {
+  try {
+    // Return masked API keys - in a real app, these would be stored securely
+    const apiKeys = {
+      paystack: {
+        publicKey: process.env.PAYSTACK_PUBLIC_KEY ? '****' + process.env.PAYSTACK_PUBLIC_KEY.slice(-4) : null,
+        secretKey: process.env.PAYSTACK_SECRET_KEY ? '****' + process.env.PAYSTACK_SECRET_KEY.slice(-4) : null
+      },
+      email: {
+        apiKey: process.env.EMAIL_API_KEY ? '****' + process.env.EMAIL_API_KEY.slice(-4) : null
+      }
+    };
+
+    res.status(200).json({
+      success: true,
+      data: apiKeys
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router;

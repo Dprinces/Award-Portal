@@ -33,7 +33,7 @@ const Home = () => {
       icon: CurrencyDollarIcon,
       title: "Secure Payments",
       description:
-        "Pay securely with Paystack integration. Every vote requires payment to ensure authenticity.",
+        "Pay securely with OPay integration. Every vote requires payment to ensure authenticity.",
     },
     {
       icon: ChartBarIcon,
@@ -289,7 +289,7 @@ const Home = () => {
                 step: "03",
                 title: "Vote & Pay",
                 description:
-                  "Cast your vote securely with payment verification through Paystack integration.",
+                  "Cast your vote securely with payment verification through OPay integration.",
               },
             ].map((step, index) => (
               <motion.div

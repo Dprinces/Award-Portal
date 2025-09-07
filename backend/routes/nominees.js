@@ -79,9 +79,14 @@ router.get('/', [
   ]
 ], async (req, res) => {
   try {
+    // Log request data for debugging
+    console.log('POST /api/nominees request body:', req.body);
+    console.log('POST /api/nominees request file:', req.file);
+    
     // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('Validation errors:', errors.array());
       return res.status(400).json({
         success: false,
         message: 'Validation failed',
@@ -146,28 +151,37 @@ router.get('/', [
                   ]
                 }
               }
+            },
+            {
+              $group: {
+                _id: null,
+                voteCount: { $sum: 1 },
+                totalRevenue: { $sum: '$amount' },
+                uniqueVoters: { $addToSet: '$voter' },
+                averageVoteValue: { $avg: '$amount' },
+                lastVoteAt: { $max: '$createdAt' }
+              }
             }
           ],
-          as: 'votes'
+          as: 'voteStats'
         }
       },
       {
         $addFields: {
-          voteCount: { $size: '$votes' },
-          totalRevenue: { $sum: '$votes.amount' },
+          voteCount: { $ifNull: [{ $arrayElemAt: ['$voteStats.voteCount', 0] }, 0] },
+          totalRevenue: { $ifNull: [{ $arrayElemAt: ['$voteStats.totalRevenue', 0] }, 0] },
           uniqueVoters: {
-            $size: {
-              $setUnion: ['$votes.voter', []]
-            }
+            $ifNull: [
+              {
+                $size: {
+                  $ifNull: [{ $arrayElemAt: ['$voteStats.uniqueVoters', 0] }, []]
+                }
+              },
+              0
+            ]
           },
-          averageVoteValue: {
-            $cond: {
-              if: { $gt: [{ $size: '$votes' }, 0] },
-              then: { $avg: '$votes.amount' },
-              else: 0
-            }
-          },
-          lastVoteAt: { $max: '$votes.createdAt' }
+          averageVoteValue: { $ifNull: [{ $arrayElemAt: ['$voteStats.averageVoteValue', 0] }, 0] },
+          lastVoteAt: { $arrayElemAt: ['$voteStats.lastVoteAt', 0] }
         }
       }
     ];
@@ -218,6 +232,9 @@ router.get('/', [
           _id: '$student._id',
           firstName: '$student.firstName',
           lastName: '$student.lastName',
+          studentId: '$student.studentId',
+          department: '$student.department',
+          level: '$student.level',
           profilePicture: '$student.profilePicture',
           academicDetails: '$student.academicDetails'
         },
@@ -227,15 +244,18 @@ router.get('/', [
           icon: '$category.icon',
           color: '$category.color'
         },
-        reason: 1,
+        reason: '$reason',
+        image: 1,
         achievements: 1,
         campaignStatement: 1,
         socialMediaLinks: 1,
         status: 1,
-        voteCount: 1,
-        totalRevenue: 1,
-        uniqueVoters: 1,
-        averageVoteValue: { $round: ['$averageVoteValue', 2] },
+        statistics: {
+          totalVotes: '$voteCount',
+          totalRevenue: '$totalRevenue',
+          uniqueVoters: '$uniqueVoters',
+          averageVoteValue: { $round: ['$averageVoteValue', 2] }
+        },
         lastVoteAt: 1,
         createdAt: 1,
         updatedAt: 1
@@ -320,6 +340,64 @@ router.get('/', [
 });
 
 /**
+ * @route   GET /api/nominees/category/:categoryId
+ * @desc    Get all nominees for a specific category
+ * @access  Public
+ */
+router.get('/category/:categoryId', [
+  [
+    param('categoryId')
+      .isMongoId()
+      .withMessage('Valid category ID is required')
+  ]
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    const { categoryId } = req.params;
+
+    // Check if category exists
+    const category = await Category.findById(categoryId);
+    if (!category) {
+      return res.status(404).json({
+        success: false,
+        message: 'Category not found'
+      });
+    }
+
+    // Get nominees for this category
+    const nominees = await Nominee.find({ 
+      category: categoryId,
+      status: 'approved'
+    })
+    .populate('student', 'firstName lastName email studentId department level profilePicture')
+    .populate('category', 'name description')
+    .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      message: 'Nominees retrieved successfully',
+      data: nominees
+    });
+
+  } catch (error) {
+    console.error('Error fetching nominees by category:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+/**
  * @route   GET /api/nominees/:id
  * @desc    Get single nominee with detailed information
  * @access  Public
@@ -332,9 +410,14 @@ router.get('/:id', [
   ]
 ], async (req, res) => {
   try {
+    // Log request data for debugging
+    console.log('POST /api/nominees request body:', req.body);
+    console.log('POST /api/nominees request file:', req.file);
+    
     // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('Validation errors:', errors.array());
       return res.status(400).json({
         success: false,
         message: 'Validation failed',
@@ -439,11 +522,11 @@ router.get('/:id', [
       {
         $addFields: {
           statistics: {
-            totalVotes: { $size: '$allVotes' },
+            totalVotes: { $size: { $ifNull: ['$allVotes', []] } },
             totalRevenue: { $sum: '$allVotes.amount' },
             uniqueVoters: {
               $size: {
-                $setUnion: ['$allVotes.voter', []]
+                $setUnion: [{ $ifNull: ['$allVotes.voter', []] }, []]
               }
             },
             averageVoteValue: {
@@ -479,6 +562,9 @@ router.get('/:id', [
             firstName: '$student.firstName',
             lastName: '$student.lastName',
             email: '$student.email',
+            studentId: '$student.studentId',
+            department: '$student.department',
+            level: '$student.level',
             profilePicture: '$student.profilePicture',
             academicDetails: '$student.academicDetails',
             socialMediaLinks: '$student.socialMediaLinks'
@@ -491,7 +577,7 @@ router.get('/:id', [
             color: '$category.color',
             isVotingActive: '$category.isVotingActive'
           },
-          reason: 1,
+          nominationReason: '$reason',
           achievements: 1,
           campaignStatement: 1,
           socialMediaLinks: 1,
@@ -578,9 +664,22 @@ router.post('/', [
       .withMessage('Reason must be between 50 and 1000 characters'),
     body('achievements')
       .optional()
+      .isArray()
+      .withMessage('Achievements must be an array'),
+    body('achievements.*.title')
+      .optional()
       .trim()
-      .isLength({ max: 2000 })
-      .withMessage('Achievements must not exceed 2000 characters')
+      .isLength({ min: 1, max: 100 })
+      .withMessage('Achievement title must be between 1 and 100 characters'),
+    body('achievements.*.description')
+      .optional()
+      .trim()
+      .isLength({ min: 1, max: 500 })
+      .withMessage('Achievement description must be between 1 and 500 characters'),
+    body('achievements.*.date')
+      .optional()
+      .isISO8601()
+      .withMessage('Achievement date must be a valid date')
   ]
 ], async (req, res) => {
   try {
@@ -616,12 +715,7 @@ router.post('/', [
       });
     }
 
-    if (!studentUser.isEmailVerified) {
-      return res.status(400).json({
-        success: false,
-        message: 'Student email must be verified before nomination'
-      });
-    }
+
 
     if (studentUser.role !== 'student') {
       return res.status(400).json({
@@ -639,7 +733,7 @@ router.post('/', [
       });
     }
 
-    if (categoryDoc.status !== 'active') {
+    if (!categoryDoc.isActive) {
       return res.status(400).json({
         success: false,
         message: 'Category is not active for nominations'
@@ -673,8 +767,8 @@ router.post('/', [
     const nominee = new Nominee({
       student,
       category,
-      reason: reason.trim(),
-      achievements: achievements?.trim(),
+      nominationReason: reason.trim(),
+      achievements: achievements || [],
       image: imagePath,
       nominatedBy: req.user.id,
       status: req.user.role === 'admin' ? 'approved' : 'pending'
@@ -734,9 +828,22 @@ router.put('/:id', [
       .withMessage('Reason must be between 50 and 1000 characters'),
     body('achievements')
       .optional()
+      .isArray()
+      .withMessage('Achievements must be an array'),
+    body('achievements.*.title')
+      .optional()
       .trim()
-      .isLength({ max: 2000 })
-      .withMessage('Achievements must not exceed 2000 characters'),
+      .isLength({ min: 1, max: 100 })
+      .withMessage('Achievement title must be between 1 and 100 characters'),
+    body('achievements.*.description')
+      .optional()
+      .trim()
+      .isLength({ min: 1, max: 500 })
+      .withMessage('Achievement description must be between 1 and 500 characters'),
+    body('achievements.*.date')
+      .optional()
+      .isISO8601()
+      .withMessage('Achievement date must be a valid date'),
     body('status')
       .optional()
       .isIn(['pending', 'approved', 'rejected'])

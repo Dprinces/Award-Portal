@@ -232,6 +232,103 @@ router.get('/my-votes', [
 });
 
 /**
+ * @route   GET /api/votes/category/:categoryId/counts
+ * @desc    Get vote counts for nominees in a category
+ * @access  Public
+ */
+router.get('/category/:categoryId/counts', [
+  [
+    param('categoryId')
+      .isMongoId()
+      .withMessage('Valid category ID is required')
+  ]
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    const { categoryId } = req.params;
+
+    // Check if category exists
+    const category = await Category.findById(categoryId);
+    if (!category) {
+      return res.status(404).json({
+        success: false,
+        message: 'Category not found'
+      });
+    }
+
+    // Get vote counts for each nominee in this category
+    const voteCounts = await Vote.aggregate([
+      {
+        $match: {
+          category: new mongoose.Types.ObjectId(categoryId),
+          status: 'verified'
+        }
+      },
+      {
+        $group: {
+          _id: '$nominee',
+          count: { $sum: 1 },
+          totalAmount: { $sum: '$amount' }
+        }
+      },
+      {
+        $lookup: {
+          from: 'nominees',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'nominee'
+        }
+      },
+      {
+        $unwind: '$nominee'
+      },
+      {
+        $project: {
+          nomineeId: '$_id',
+          count: 1,
+          totalAmount: 1,
+          nominee: {
+            _id: '$nominee._id',
+            student: '$nominee.student'
+          }
+        }
+      }
+    ]);
+
+    // Convert to object format for easy lookup
+    const countsMap = {};
+    voteCounts.forEach(item => {
+      countsMap[item.nomineeId] = {
+        count: item.count,
+        totalAmount: item.totalAmount
+      };
+    });
+
+    res.json({
+      success: true,
+      message: 'Vote counts retrieved successfully',
+      data: countsMap
+    });
+
+  } catch (error) {
+    console.error('Error fetching vote counts:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+/**
  * @route   GET /api/votes/category/:categoryId/results
  * @desc    Get voting results for a category
  * @access  Public

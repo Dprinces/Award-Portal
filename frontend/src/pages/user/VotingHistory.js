@@ -78,7 +78,7 @@ const VotingHistory = () => {
     return votes.filter(vote => {
       const matchesCategory = !filterCategory || vote.category._id === filterCategory;
       const matchesSearch = !searchTerm || 
-        vote.nominee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (vote.nominee.student ? `${vote.nominee.student.firstName} ${vote.nominee.student.lastName}` : vote.nominee.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         vote.category.name.toLowerCase().includes(searchTerm.toLowerCase());
       return matchesCategory && matchesSearch;
     });
@@ -288,10 +288,10 @@ const VotingHistory = () => {
                               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                 <Avatar
                                   src={vote.nominee.image}
-                                  alt={vote.nominee.name}
+                                  alt={vote.nominee.student ? `${vote.nominee.student.firstName} ${vote.nominee.student.lastName}` : vote.nominee.name || 'Unknown Nominee'}
                                   sx={{ width: 32, height: 32, mr: 2 }}
                                 />
-                                {vote.nominee.name}
+                                {vote.nominee.student ? `${vote.nominee.student.firstName} ${vote.nominee.student.lastName}` : vote.nominee.name || 'Unknown Nominee'}
                               </Box>
                             </TableCell>
                             <TableCell>

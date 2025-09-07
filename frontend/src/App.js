@@ -105,6 +105,14 @@ function App() {
                       </ProtectedRoute>
                     }
                   />
+                  <Route
+                    path="/vote/:categoryId/:nomineeId"
+                    element={
+                      <ProtectedRoute>
+                        <Vote />
+                      </ProtectedRoute>
+                    }
+                  />
 
                   {/* User Dashboard Routes */}
                   <Route

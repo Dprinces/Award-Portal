@@ -23,14 +23,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 
 const Vote = () => {
-  const { categoryId } = useParams();
+  const { categoryId, nomineeId } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
 
   const [selectedNominee, setSelectedNominee] = useState(null);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState("paystack");
+  const [paymentMethod, setPaymentMethod] = useState("opay");
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [voteCount, setVoteCount] = useState({});
 
@@ -82,6 +82,17 @@ const Vote = () => {
     enabled: isAuthenticated && !!categoryId,
   });
 
+  // Auto-select nominee if nomineeId is provided in URL
+  useEffect(() => {
+    if (nomineeId && nominees && nominees.length > 0) {
+      const nominee = nominees.find(n => n._id === nomineeId);
+      if (nominee) {
+        setSelectedNominee(nominee);
+        setPaymentDialogOpen(true);
+      }
+    }
+  }, [nomineeId, nominees]);
+
   // Vote mutation
   const voteMutation = useMutation({
     mutationFn: async ({ nomineeId, paymentData }) => {
@@ -109,28 +120,28 @@ const Vote = () => {
     },
   });
 
-  // Initialize Paystack payment
+  // Initialize OPay payment
   const initializePayment = async () => {
     if (!selectedNominee || !category) return;
 
     setIsProcessingPayment(true);
 
     try {
-      // Initialize payment with Paystack
+      // Initialize payment with OPay
       const response = await api.post("/payments/initialize", {
+        nomineeId: selectedNominee._id,
+        categoryId: categoryId,
         amount: category.votePrice || 100, // Default to 100 naira
         email: user.email,
         metadata: {
-          categoryId,
-          nomineeId: selectedNominee._id,
           userId: user._id,
         },
       });
 
-      const { authorization_url, reference } = response.data.data;
+      const { cashierUrl, reference } = response.data.data;
 
-      // Redirect to Paystack payment page
-      window.location.href = authorization_url;
+      // Redirect to OPay payment page
+      window.location.href = cashierUrl;
     } catch (error) {
       toast.error(
         error.response?.data?.message || "Failed to initialize payment"
@@ -155,11 +166,12 @@ const Vote = () => {
   };
 
   const getNomineeVoteCount = (nomineeId) => {
-    return voteCounts?.find((vc) => vc.nomineeId === nomineeId)?.count || 0;
+    return voteCounts?.[nomineeId]?.count || 0;
   };
 
   const getTotalVotes = () => {
-    return voteCounts?.reduce((total, vc) => total + vc.count, 0) || 0;
+    if (!voteCounts) return 0;
+    return Object.values(voteCounts).reduce((total, vc) => total + vc.count, 0);
   };
 
   const getVotePercentage = (nomineeId) => {
@@ -397,12 +409,12 @@ const Vote = () => {
                       {nominee.image ? (
                         <img
                           src={nominee.image}
-                          alt={nominee.name}
+                          alt={nominee.student ? `${nominee.student.firstName} ${nominee.student.lastName}` : nominee.name || 'Unknown Nominee'}
                           className="w-full h-full object-cover"
                         />
                       ) : (
                         <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
-                          {nominee.name.charAt(0)}
+                          {(nominee.student?.firstName || nominee.name || 'U').charAt(0)}
                         </div>
                       )}
 
@@ -428,7 +440,7 @@ const Vote = () => {
                   <div className="p-6 flex-1 flex flex-col">
                     {/* Nominee Name */}
                     <h3 className="text-xl font-bold text-gray-900 mb-3">
-                      {nominee.name}
+                      {nominee.student ? `${nominee.student.firstName} ${nominee.student.lastName}` : nominee.name || 'Unknown Nominee'}
                     </h3>
 
                     {/* Nominee Details */}
@@ -546,7 +558,7 @@ const Vote = () => {
                           <InformationCircleIcon className="h-5 w-5 text-blue-400 mr-2" />
                           <p className="text-blue-800">
                             You are about to vote for{" "}
-                            <strong>{selectedNominee.name}</strong> in the{" "}
+                            <strong>{selectedNominee.student ? `${selectedNominee.student.firstName} ${selectedNominee.student.lastName}` : selectedNominee.name || 'Unknown Nominee'}</strong> in the{" "}
                             <strong>{category?.name}</strong> category.
                           </p>
                         </div>
@@ -557,16 +569,16 @@ const Vote = () => {
                           {selectedNominee.image ? (
                             <img
                               src={selectedNominee.image}
-                              alt={selectedNominee.name}
+                              alt={selectedNominee.student ? `${selectedNominee.student.firstName} ${selectedNominee.student.lastName}` : selectedNominee.name || 'Unknown Nominee'}
                               className="w-16 h-16 rounded-full object-cover"
                             />
                           ) : (
-                            selectedNominee.name.charAt(0)
+                            (selectedNominee.student?.firstName || selectedNominee.name || 'U').charAt(0)
                           )}
                         </div>
                         <div>
                           <h3 className="text-lg font-semibold text-gray-900">
-                            {selectedNominee.name}
+                            {selectedNominee.student ? `${selectedNominee.student.firstName} ${selectedNominee.student.lastName}` : selectedNominee.name || 'Unknown Nominee'}
                           </h3>
                           <p className="text-gray-600">
                             {selectedNominee.department} -{" "}
@@ -591,7 +603,7 @@ const Vote = () => {
                           <div className="space-y-3 text-sm text-gray-600">
                             <div>
                               <strong>1. Online Payment:</strong> You will be
-                              redirected to Paystack to complete your payment.
+                              redirected to OPay to complete your payment.
                             </div>
 
                             <div>
@@ -616,10 +628,7 @@ const Vote = () => {
                                 <strong>Bank:</strong> Wema Bank
                               </div>
                             </div>
-                            <p className="text-xs text-gray-500 mt-2">
-                              Note: After transfer, contact admin for manual
-                              verification
-                            </p>
+
                           </div>
                         </div>
                       </div>

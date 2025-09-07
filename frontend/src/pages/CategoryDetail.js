@@ -144,12 +144,12 @@ const CategoryDetail = () => {
                     {nominee.image ? (
                       <img
                         src={nominee.image}
-                        alt={nominee.name}
+                        alt={nominee.student ? `${nominee.student.firstName} ${nominee.student.lastName}` : nominee.name || 'Unknown Nominee'}
                         className="w-full h-full object-cover"
                       />
                     ) : (
                       <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
-                        {nominee.name.charAt(0)}
+                        {(nominee.student?.firstName || nominee.name)?.charAt(0) || '?'}
                       </div>
                     )}
                   </div>
@@ -157,7 +157,7 @@ const CategoryDetail = () => {
                   <div className="p-6 flex-1 flex flex-col">
                     {/* Nominee Name */}
                     <h3 className="text-xl font-bold text-gray-900 mb-3">
-                      {nominee.name}
+                      {nominee.student ? `${nominee.student.firstName} ${nominee.student.lastName}` : nominee.name || 'Unknown Nominee'}
                     </h3>
 
                     {/* Description */}
@@ -183,7 +183,7 @@ const CategoryDetail = () => {
                                   className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"
                                 >
                                   <StarIcon className="h-3 w-3 mr-1" />
-                                  {achievement}
+                                  {achievement.title || achievement}
                                 </span>
                               ))}
                             {nominee.achievements.length > 2 && (
@@ -225,7 +225,7 @@ const CategoryDetail = () => {
                       className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                     >
                       <TrophyIcon className="h-4 w-4 mr-2" />
-                      Vote for {nominee.name}
+                      Vote for {nominee.student ? `${nominee.student.firstName} ${nominee.student.lastName}` : nominee.name || 'this nominee'}
                     </button>
                   </div>
                 </div>

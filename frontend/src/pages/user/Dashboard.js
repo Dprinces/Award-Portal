@@ -325,7 +325,7 @@ const Dashboard = () => {
                       <div className="relative">
                         <img
                           src={vote.nominee.image}
-                          alt={vote.nominee.name}
+                          alt={vote.nominee.student ? `${vote.nominee.student.firstName} ${vote.nominee.student.lastName}` : vote.nominee.name || 'Unknown Nominee'}
                           className="w-12 h-12 rounded-full object-cover"
                         />
                         <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
@@ -334,7 +334,7 @@ const Dashboard = () => {
                       </div>
                       <div className="flex-1 ml-4">
                         <h4 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                          {vote.nominee.name}
+                          {vote.nominee.student ? `${vote.nominee.student.firstName} ${vote.nominee.student.lastName}` : vote.nominee.name || 'Unknown Nominee'}
                         </h4>
                         <p className="text-sm text-gray-600">
                           {vote.category.name}

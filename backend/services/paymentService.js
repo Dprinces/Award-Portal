@@ -8,10 +8,13 @@ const Category = require('../models/Category');
 
 class PaymentService {
   constructor() {
-    this.paystackSecretKey = process.env.PAYSTACK_SECRET_KEY;
-    this.paystackPublicKey = process.env.PAYSTACK_PUBLIC_KEY;
-    this.baseURL = 'https://api.paystack.co';
-    this.webhookSecret = process.env.PAYSTACK_WEBHOOK_SECRET;
+    this.opayMerchantId = process.env.OPAY_MERCHANT_ID;
+    this.opayPrivateKey = process.env.OPAY_PRIVATE_KEY;
+    this.opayPublicKey = process.env.OPAY_PUBLIC_KEY;
+    this.baseURL = process.env.NODE_ENV === 'production' 
+      ? 'https://api.opaycheckout.com/api/v1/international'
+      : 'https://sandboxapi.opaycheckout.com/api/v1/international';
+    this.webhookSecret = process.env.OPAY_WEBHOOK_SECRET;
   }
 
   /**
@@ -61,37 +64,45 @@ class PaymentService {
       // Generate internal reference
       const internalReference = Payment.generateInternalReference();
 
-      // Prepare payment data
+      // Prepare payment data for OPay
       const paymentData = {
-        email: email || user.email,
-        amount: amount * 100, // Convert to kobo
-        currency: 'NGN',
+        country: "NG",
         reference: internalReference,
-        callback_url: `${process.env.FRONTEND_URL}/payment/callback`,
-        metadata: {
-          userId: userId.toString(),
-          nomineeId: nomineeId.toString(),
-          categoryId: categoryId.toString(),
-          purpose: 'vote_payment',
-          internalReference,
-          ...metadata
+        amount: {
+          currency: "NGN",
+          total: amount * 100 // Convert to kobo
         },
-        channels: ['card', 'bank', 'ussd', 'qr', 'mobile_money', 'bank_transfer']
+        callbackUrl: `${process.env.BACKEND_URL}/api/payments/opay/callback`,
+        returnUrl: `${process.env.FRONTEND_URL}/payment/callback`,
+        product: {
+          name: "Vote Payment",
+          description: `Vote for nominee in category`
+        },
+        userInfo: {
+          userName: user.name || user.email,
+          userEmail: email || user.email,
+          userMobile: user.phone || ""
+        },
+        payMethod: "BankCard"
       };
 
-      // Make request to Paystack
+      // Generate HMAC signature for OPay
+      const signature = this.generateSignature(paymentData);
+
+      // Make request to OPay
       const response = await axios.post(
-        `${this.baseURL}/transaction/initialize`,
+        `${this.baseURL}/payment/create`,
         paymentData,
         {
           headers: {
-            Authorization: `Bearer ${this.paystackSecretKey}`,
+            'Authorization': `Bearer ${signature}`,
+            'MerchantId': this.opayMerchantId,
             'Content-Type': 'application/json'
           }
         }
       );
 
-      if (!response.data.status) {
+      if (response.data.code !== '00000') {
         throw new Error(response.data.message || 'Payment initialization failed');
       }
 
@@ -101,11 +112,11 @@ class PaymentService {
         amount: amount,
         currency: 'NGN',
         status: 'pending',
-        gateway: 'paystack',
+        gateway: 'opay',
         internalReference,
-        gatewayReference: response.data.data.reference,
-        authorizationUrl: response.data.data.authorization_url,
-        accessCode: response.data.data.access_code,
+        gatewayReference: response.data.data.orderNo,
+        authorizationUrl: response.data.data.cashierUrl,
+        accessCode: response.data.data.orderNo,
         metadata: {
           purpose: 'vote_payment',
           category: categoryId,
@@ -120,8 +131,8 @@ class PaymentService {
         success: true,
         data: {
           paymentId: payment._id,
-          authorizationUrl: response.data.data.authorization_url,
-          accessCode: response.data.data.access_code,
+          authorizationUrl: response.data.data.cashierUrl,
+          accessCode: response.data.data.orderNo,
           reference: internalReference
         }
       };
@@ -130,6 +141,14 @@ class PaymentService {
       console.error('Payment initialization error:', error);
       throw new Error(error.message || 'Failed to initialize payment');
     }
+  }
+
+  /**
+   * Generate HMAC signature for OPay API
+   */
+  generateSignature(data) {
+    const dataString = JSON.stringify(data);
+    return crypto.createHmac('sha512', this.opayPrivateKey).update(dataString).digest('hex');
   }
 
   /**
@@ -160,24 +179,34 @@ class PaymentService {
         };
       }
 
-      // Verify with Paystack
-      const response = await axios.get(
-        `${this.baseURL}/transaction/verify/${payment.gatewayReference}`,
+      // Verify with OPay
+      const queryData = {
+        orderNo: payment.gatewayReference,
+        reference: payment.gatewayReference
+      };
+
+      const signature = this.generateSignature(queryData);
+
+      const response = await axios.post(
+        `${this.baseURL}/payment/status`,
+        queryData,
         {
           headers: {
-            Authorization: `Bearer ${this.paystackSecretKey}`
+            'Authorization': `Bearer ${signature}`,
+            'MerchantId': this.opayMerchantId,
+            'Content-Type': 'application/json'
           }
         }
       );
 
-      if (!response.data.status) {
+      if (response.data.code !== '00000') {
         throw new Error(response.data.message || 'Payment verification failed');
       }
 
       const transactionData = response.data.data;
 
       // Update payment record
-      payment.status = transactionData.status === 'success' ? 'successful' : 'failed';
+      payment.status = transactionData.status === 'SUCCESS' ? 'successful' : 'failed';
       payment.gatewayResponse = transactionData;
       payment.paidAt = transactionData.paid_at ? new Date(transactionData.paid_at) : new Date();
       payment.fees = {
@@ -221,6 +250,59 @@ class PaymentService {
     } catch (error) {
       console.error('Payment verification error:', error);
       throw new Error(error.message || 'Failed to verify payment');
+    }
+  }
+
+  /**
+   * Handle OPay callback notification
+   */
+  async handleOPayCallback(payload, signature) {
+    try {
+      // Verify the callback signature
+      const expectedSignature = this.generateSignature(payload);
+      const receivedSignature = signature.replace('Bearer ', '');
+      
+      if (expectedSignature !== receivedSignature) {
+        throw new Error('Invalid callback signature');
+      }
+
+      const { reference, orderNo, status } = payload;
+      
+      // Find payment by reference or orderNo
+      const payment = await Payment.findOne({
+        $or: [
+          { reference: reference },
+          { gatewayReference: orderNo }
+        ]
+      });
+
+      if (!payment) {
+        console.log('Payment not found for callback:', { reference, orderNo });
+        return;
+      }
+
+      // Update payment status based on OPay status
+      if (status === 'SUCCESS' && payment.status !== 'completed') {
+        payment.status = 'completed';
+        payment.gatewayResponse = payload;
+        payment.verifiedAt = new Date();
+        await payment.save();
+
+        // Create vote from payment
+        await this.createVoteFromPayment(payment);
+        
+        console.log('Payment completed via callback:', payment.reference);
+      } else if (status === 'FAILED') {
+        payment.status = 'failed';
+        payment.gatewayResponse = payload;
+        await payment.save();
+        
+        console.log('Payment failed via callback:', payment.reference);
+      }
+
+    } catch (error) {
+      console.error('OPay callback handling error:', error);
+      throw error;
     }
   }
 

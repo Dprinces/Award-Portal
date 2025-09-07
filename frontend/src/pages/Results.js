@@ -341,7 +341,7 @@ const Results = () => {
                           <div className="flex items-start justify-between">
                             <div>
                               <h3 className="text-lg font-semibold text-gray-900 truncate">
-                                {nominee.name}
+                                {nominee.student ? `${nominee.student.firstName} ${nominee.student.lastName}` : nominee.name || 'Unknown Nominee'}
                               </h3>
                               <div className="flex flex-wrap gap-2 mt-1 text-sm text-gray-600">
                                 <span>ID: {nominee.studentId}</span>

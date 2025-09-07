@@ -613,7 +613,7 @@ const PaymentReports = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {payment.paymentMethod || 'Paystack'}
+                        {payment.paymentMethod || 'OPay'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {new Date(payment.createdAt).toLocaleString()}

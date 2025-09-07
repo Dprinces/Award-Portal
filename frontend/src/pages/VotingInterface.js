@@ -524,7 +524,7 @@ const VotingInterface = () => {
                         <div className="space-y-2 text-sm text-gray-600">
                           <p>
                             1. Online Payment: You will be redirected to
-                            Paystack to complete your payment.
+                            OPay to complete your payment.
                           </p>
                           <p>
                             2. Bank Transfer: Transfer to any of the following
@@ -668,10 +668,10 @@ const VotingInterface = () => {
                               </div>
                               <div>
                                 <p className="font-medium text-gray-900">
-                                  Email
+                                  Student ID
                                 </p>
                                 <p className="text-gray-600">
-                                  {selectedNominee.student.email}
+                                  {selectedNominee.student.studentId}
                                 </p>
                               </div>
                             </div>

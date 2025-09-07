@@ -88,13 +88,13 @@ const NomineeProfile = () => {
                 component="img"
                 height="300"
                 image={nominee.image}
-                alt={nominee.name}
+                alt={nominee.student ? `${nominee.student.firstName} ${nominee.student.lastName}` : nominee.name || 'Unknown Nominee'}
                 sx={{ objectFit: 'cover' }}
               />
             )}
             <CardContent>
               <Typography variant="h4" component="h1" gutterBottom>
-                {nominee?.name}
+                {nominee?.student ? `${nominee.student.firstName} ${nominee.student.lastName}` : nominee?.name || 'Unknown Nominee'}
               </Typography>
               
               {category && (
@@ -121,7 +121,7 @@ const NomineeProfile = () => {
                   },
                 }}
               >
-                Vote for {nominee?.name}
+                Vote for {nominee?.student ? `${nominee.student.firstName} ${nominee.student.lastName}` : nominee?.name || 'Unknown Nominee'}
               </Button>
             </CardContent>
           </Card>
@@ -132,7 +132,7 @@ const NomineeProfile = () => {
           <Card>
             <CardContent>
               <Typography variant="h5" gutterBottom>
-                About {nominee?.name}
+                About {nominee?.student ? `${nominee.student.firstName} ${nominee.student.lastName}` : nominee?.name || 'Unknown Nominee'}
               </Typography>
               
               {nominee?.description && (
@@ -153,7 +153,8 @@ const NomineeProfile = () => {
                     {nominee.achievements.map((achievement, index) => (
                       <ListItem key={index} sx={{ pl: 0 }}>
                         <ListItemText
-                          primary={achievement}
+                          primary={achievement.title || achievement}
+                          secondary={achievement.description}
                           primaryTypographyProps={{
                             variant: 'body1',
                           }}

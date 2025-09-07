@@ -476,7 +476,7 @@ const ManageNominees = () => {
                             {viewDialog.nominee.student.firstName} {viewDialog.nominee.student.lastName}
                           </Typography>
                           <Typography variant="body2" color="textSecondary">
-                            {viewDialog.nominee.student.email}
+                            {viewDialog.nominee.student.studentId}
                           </Typography>
                         </Box>
                       </Box>

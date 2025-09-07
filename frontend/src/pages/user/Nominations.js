@@ -68,7 +68,7 @@ const Nominations = () => {
     if (nominee) {
       setEditingNominee(nominee);
       setFormData({
-        name: nominee.name || '',
+        name: nominee.student ? `${nominee.student.firstName} ${nominee.student.lastName}` : nominee.name || '',
         description: nominee.description || '',
         category: nominee.category || '',
         image: nominee.image || '',
@@ -184,14 +184,14 @@ const Nominations = () => {
                       component="img"
                       height="200"
                       image={nominee.image}
-                      alt={nominee.name}
+                      alt={nominee.student ? `${nominee.student.firstName} ${nominee.student.lastName}` : nominee.name || 'Unknown Nominee'}
                       sx={{ objectFit: 'cover' }}
                     />
                   )}
                   
                   <CardContent sx={{ flexGrow: 1 }}>
                     <Typography variant="h6" component="h2" gutterBottom>
-                      {nominee.name}
+                      {nominee.student ? `${nominee.student.firstName} ${nominee.student.lastName}` : nominee.name || 'Unknown Nominee'}
                     </Typography>
                     
                     {category && (
@@ -224,7 +224,7 @@ const Nominations = () => {
                         {nominee.achievements.slice(0, 2).map((achievement, index) => (
                           <Chip
                             key={index}
-                            label={achievement}
+                            label={achievement.title || achievement}
                             size="small"
                             variant="outlined"
                             sx={{ mr: 1, mb: 1 }}
