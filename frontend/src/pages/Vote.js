@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
   UserIcon,
   TrophyIcon,
-  StarIcon,
   ArrowLeftIcon,
   ArrowPathIcon,
   InformationCircleIcon,
@@ -12,13 +11,11 @@ import {
   XCircleIcon,
   CreditCardIcon,
   AcademicCapIcon,
-  BuildingOfficeIcon,
   ClockIcon,
 } from "@heroicons/react/24/outline";
 import { StarIcon as StarSolidIcon } from "@heroicons/react/24/solid";
 import { useAuth } from "../contexts/AuthContext";
 import api from "../services/api";
-import LoadingSpinner from "../components/common/LoadingSpinner";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 
@@ -26,13 +23,9 @@ const Vote = () => {
   const { categoryId, nomineeId } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
-  const queryClient = useQueryClient();
-
   const [selectedNominee, setSelectedNominee] = useState(null);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState("opay");
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const [voteCount, setVoteCount] = useState({});
 
   // Fetch category details
   const {
@@ -93,32 +86,6 @@ const Vote = () => {
     }
   }, [nomineeId, nominees]);
 
-  // Vote mutation
-  const voteMutation = useMutation({
-    mutationFn: async ({ nomineeId, paymentData }) => {
-      const response = await api.post("/votes", {
-        categoryId,
-        nomineeId,
-        paymentData,
-      });
-      return response.data;
-    },
-    onSuccess: (data) => {
-      toast.success("Vote cast successfully!");
-      setPaymentDialogOpen(false);
-      setSelectedNominee(null);
-      setIsProcessingPayment(false);
-
-      // Invalidate and refetch relevant queries
-      queryClient.invalidateQueries(["vote-counts", categoryId]);
-      queryClient.invalidateQueries(["user-vote", categoryId]);
-      queryClient.invalidateQueries(["nominees", categoryId]);
-    },
-    onError: (error) => {
-      toast.error(error.response?.data?.message || "Failed to cast vote");
-      setIsProcessingPayment(false);
-    },
-  });
 
   // Initialize OPay payment
   const initializePayment = async () => {
@@ -138,7 +105,7 @@ const Vote = () => {
         },
       });
 
-      const { cashierUrl, reference } = response.data.data;
+      const { cashierUrl } = response.data.data;
 
       // Redirect to OPay payment page
       window.location.href = cashierUrl;

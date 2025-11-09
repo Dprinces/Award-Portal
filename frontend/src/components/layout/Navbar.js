@@ -47,36 +47,8 @@ const Navbar = () => {
     setMobileMenuOpen(false);
   };
 
-  const menuItems = [
-    { text: "Home", icon: <Home />, path: "/", auth: false },
-    { text: "Dashboard", icon: <Dashboard />, path: "/dashboard", auth: true },
-    { text: "Vote", icon: <HowToVote />, path: "/vote", auth: true },
-    { text: "Results", icon: <EmojiEvents />, path: "/results", auth: false },
-  ];
-
-  const adminItems = [
-    {
-      text: "Admin Panel",
-      icon: <AdminPanelSettings />,
-      path: "/admin",
-      auth: true,
-      admin: true,
-    },
-  ];
-
-  const userMenuItems = [
-    { text: "Profile", icon: <Person />, action: () => navigate("/profile") },
-    {
-      text: "Dashboard",
-      icon: <Dashboard />,
-      action: () => navigate("/dashboard"),
-    },
-    { text: "Logout", icon: <ExitToApp />, action: handleLogout },
-  ];
-
   const navigationItems = [
     { path: "/", label: "Home", icon: Home, public: true },
-    { path: "/vote", label: "Vote", icon: HowToVote, public: true },
     { path: "/results", label: "Results", icon: EmojiEvents, public: true },
   ];
 
@@ -96,112 +68,6 @@ const Navbar = () => {
     if (path !== "/" && location.pathname.startsWith(path)) return true;
     return false;
   };
-
-  const drawer = (
-    <div style={{ width: 250 }}>
-      <div style={{ padding: "16px", textAlign: "center" }}>
-        <div
-          style={{
-            fontWeight: "bold",
-            fontSize: "1.25rem",
-            marginBottom: "16px",
-          }}
-        >
-          🥪 Sandwich Award
-        </div>
-        <hr
-          style={{
-            margin: "16px 0",
-            border: "none",
-            borderTop: "1px solid #e0e0e0",
-          }}
-        />
-        <div>
-          {navigationItems.map((item) => {
-            const IconComponent = item.icon;
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                onClick={closeMobileMenu}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  padding: "12px 16px",
-                  textDecoration: "none",
-                  color: "inherit",
-                  backgroundColor: isActivePath(item.path)
-                    ? "#f5f5f5"
-                    : "transparent",
-                  borderRadius: "4px",
-                  margin: "4px 0",
-                }}
-              >
-                <IconComponent
-                  style={{ marginRight: "16px", fontSize: "20px" }}
-                />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
-        </div>
-        {user && (
-          <>
-            <hr
-              style={{
-                margin: "16px 0",
-                border: "none",
-                borderTop: "1px solid #e0e0e0",
-              }}
-            />
-            <div>
-              {userItems.map((item) => {
-                const IconComponent = item.icon;
-                return (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    onClick={closeMobileMenu}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      padding: "12px 16px",
-                      textDecoration: "none",
-                      color: "inherit",
-                      backgroundColor: isActivePath(item.path)
-                        ? "#f5f5f5"
-                        : "transparent",
-                      borderRadius: "4px",
-                      margin: "4px 0",
-                    }}
-                  >
-                    <IconComponent
-                      style={{ marginRight: "16px", fontSize: "20px" }}
-                    />
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
-              <div
-                onClick={handleLogout}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  padding: "12px 16px",
-                  cursor: "pointer",
-                  borderRadius: "4px",
-                  margin: "4px 0",
-                }}
-              >
-                <ExitToApp style={{ marginRight: "16px", fontSize: "20px" }} />
-                <span>Logout</span>
-              </div>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-  );
 
   return (
     <>
@@ -252,11 +118,10 @@ const Navbar = () => {
         {/* Logo */}
         <Link
           to="/"
+          className={`logo ${scrolled ? "logo-dark" : "logo-gradient"}`}
           style={{
             textDecoration: "none",
-            color: scrolled ? "#333" : "white",
             fontSize: "1.5rem",
-            fontWeight: "bold",
             display: "flex",
             alignItems: "center",
             gap: "8px",
@@ -316,6 +181,16 @@ const Navbar = () => {
               </Link>
             );
           })}
+
+          {/* Primary CTA */}
+          <Link
+            to="/vote"
+            className={`cta-button ${scrolled ? "cta-outline" : ""}`}
+            style={{ marginLeft: "8px", textDecoration: "none" }}
+          >
+            <HowToVote style={{ fontSize: "18px" }} />
+            Vote Now
+          </Link>
 
           {/* User Menu */}
           {user && (

@@ -547,6 +547,91 @@ router.get('/payments', async (req, res, next) => {
   }
 });
 
+// @desc    Export payment analytics as CSV
+// @route   GET /api/admin/payments/export
+// @access  Private/Admin
+router.get('/payments/export', async (req, res, next) => {
+  try {
+    const { status, startDate, endDate, minAmount, maxAmount } = req.query;
+
+    // Build filter similar to /payments, but include amount range
+    const filter = {};
+    if (status) filter.status = status;
+    if (startDate && endDate) {
+      filter.createdAt = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate)
+      };
+    }
+    if (minAmount || maxAmount) {
+      filter.amount = {};
+      if (minAmount) filter.amount.$gte = parseFloat(minAmount);
+      if (maxAmount) filter.amount.$lte = parseFloat(maxAmount);
+    }
+
+    const payments = await Payment.find(filter)
+      .populate('user', 'firstName lastName email')
+      .populate({ path: 'metadata.category', select: 'name' })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Prepare CSV rows
+    const headers = [
+      'Transaction ID',
+      'Internal Reference',
+      'User Name',
+      'User Email',
+      'Amount',
+      'Currency',
+      'Status',
+      'Payment Method',
+      'Gateway',
+      'Category',
+      'Created At',
+      'Paid At'
+    ];
+
+    const escapeCsv = (val) => {
+      const str = String(val ?? '');
+      const needsQuotes = /[",\n]/.test(str);
+      const escaped = str.replace(/"/g, '""');
+      return needsQuotes ? `"${escaped}"` : escaped;
+    };
+
+    const rows = payments.map(p => {
+      const userName = [p.user?.firstName, p.user?.lastName].filter(Boolean).join(' ').trim();
+      const categoryName = p.metadata?.category?.name || '';
+      return [
+        p.gatewayReference || '',
+        p.internalReference || '',
+        userName,
+        p.user?.email || '',
+        p.amount ?? '',
+        p.currency || 'NGN',
+        p.status || '',
+        p.paymentMethod || p.channel || '',
+        p.gateway || '',
+        categoryName,
+        p.createdAt ? new Date(p.createdAt).toISOString() : '',
+        p.paidAt ? new Date(p.paidAt).toISOString() : ''
+      ].map(escapeCsv).join(',');
+    });
+
+    const csv = [headers.join(','), ...rows].join('\n');
+
+    const filename = `payment-report-${new Date().toISOString().slice(0,10)}.csv`;
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.status(200).send(csv);
+  } catch (error) {
+    console.error('Admin payments export error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to export payments'
+    });
+  }
+});
+
 // @desc    Get system statistics
 // @route   GET /api/admin/stats
 // @access  Private/Admin

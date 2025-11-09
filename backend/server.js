@@ -43,8 +43,10 @@ const corsOptions = {
     const allowedOrigins = [
       "http://localhost:3000",
       "http://localhost:3001",
+      "http://localhost:3002",
       "http://127.0.0.1:3000",
       "http://127.0.0.1:3001",
+      "http://127.0.0.1:3002",
       "https://award-portal.vercel.app",
       process.env.FRONTEND_URL,
     ].filter(Boolean);
@@ -58,9 +60,12 @@ const corsOptions = {
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "x-auth-token"],
+  optionsSuccessStatus: 204,
 };
 
 app.use(cors(corsOptions));
+// Explicitly enable preflight for all routes
+app.options('*', cors(corsOptions));
 
 // Compression middleware
 app.use(compression());

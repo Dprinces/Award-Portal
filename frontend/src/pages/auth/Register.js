@@ -122,10 +122,24 @@ const Register = () => {
     setError('');
 
     try {
-      await register(formData);
-      navigate('/verify-email', { 
-        state: { email: formData.email } 
-      });
+      const result = await register(formData);
+      if (result?.success) {
+        navigate('/register-result', {
+          state: {
+            status: 'success',
+            email: formData.email,
+            message: 'Registration successful! Your account has been created.'
+          }
+        });
+      } else {
+        navigate('/register-result', {
+          state: {
+            status: 'failed',
+            email: formData.email,
+            message: result?.error || 'Registration failed. Please try again.'
+          }
+        });
+      }
     } catch (err) {
       console.log('Registration error:', err.response?.data);
       if (err.response?.data?.errors) {
@@ -135,6 +149,13 @@ const Register = () => {
       } else {
         setError(err.response?.data?.message || 'Registration failed. Please try again.');
       }
+      navigate('/register-result', {
+        state: {
+          status: 'failed',
+          email: formData.email,
+          message: err.response?.data?.message || 'Registration failed. Please try again.'
+        }
+      });
     } finally {
       setLoading(false);
     }

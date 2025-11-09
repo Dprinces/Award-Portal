@@ -23,10 +23,17 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      Cookies.remove('token');
-      window.location.href = '/login';
+    // If request was canceled, just propagate the error without side effects
+    if (axios.isCancel?.(error)) {
+      return Promise.reject(error);
     }
+
+    // Handle unauthorized errors gracefully without forcing navigation
+    if (error.response?.status === 401) {
+      // Remove any stale token; AuthContext handles logout UI/state
+      Cookies.remove('token');
+    }
+
     return Promise.reject(error);
   }
 );

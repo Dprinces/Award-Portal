@@ -9,7 +9,7 @@ import {
   BellIcon,
   ServerIcon,
   BoltIcon,
-  PencilIcon,
+  // PencilIcon,
   TrashIcon,
   PlusIcon,
   ExclamationTriangleIcon,
@@ -114,7 +114,7 @@ const SystemSettings = () => {
     // Refresh system stats every 30 seconds
     const interval = setInterval(fetchSystemStats, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, );
 
   const fetchSettings = async () => {
     try {
@@ -186,6 +186,36 @@ const SystemSettings = () => {
     const hours = Math.floor((seconds % 86400) / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     return `${days}d ${hours}h ${minutes}m`;
+  };
+
+  // Safely compute memory usage percentage from various possible shapes
+  const getMemoryPercent = (stats) => {
+    const m = stats?.memoryUsage;
+    if (m == null) return 0;
+    // If already a number or numeric string
+    if (typeof m === 'number') return isFinite(m) ? m : 0;
+    const numeric = parseFloat(m);
+    if (!isNaN(numeric)) return numeric;
+    // If Node's process.memoryUsage() object was returned
+    if (typeof m === 'object') {
+      const heapTotal = Number(m.heapTotal ?? 0);
+      const heapUsed = Number(m.heapUsed ?? 0);
+      if (heapTotal > 0 && isFinite(heapUsed)) {
+        return (heapUsed / heapTotal) * 100;
+      }
+      // Fallback to rss if available
+      const rss = Number(m.rss ?? 0);
+      if (rss > 0 && heapTotal > 0) {
+        return (rss / heapTotal) * 100;
+      }
+    }
+    return 0;
+  };
+
+  const getNumber = (val, fallback = 0) => {
+    if (typeof val === 'number') return isFinite(val) ? val : fallback;
+    const parsed = parseFloat(val);
+    return isNaN(parsed) ? fallback : parsed;
   };
 
   if (loading) {
@@ -274,23 +304,29 @@ const SystemSettings = () => {
 
         {/* System Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {[
-            { label: 'System Uptime', value: formatUptime(systemStats.uptime), color: 'blue' },
-            { label: 'Memory Usage', value: `${systemStats.memoryUsage.toFixed(1)}%`, color: 'green' },
-            { label: 'Active Connections', value: systemStats.activeConnections, color: 'purple' },
-            { label: 'Error Rate', value: `${systemStats.errorRate.toFixed(2)}%`, color: systemStats.errorRate > 5 ? 'red' : 'yellow' }
-          ].map((stat, index) => (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-              className={`bg-white rounded-xl p-6 shadow-lg border-l-4 border-${stat.color}-500`}
-            >
-              <h3 className="text-sm font-medium text-gray-500 mb-2">{stat.label}</h3>
-              <p className={`text-2xl font-bold text-${stat.color}-600`}>{stat.value}</p>
-            </motion.div>
-          ))}
+          {(() => {
+            const memoryPercent = getMemoryPercent(systemStats);
+            const errorRateValue = getNumber(systemStats?.errorRate, 0);
+            const activeConnections = getNumber(systemStats?.activeConnections, 0);
+            const uptimeSeconds = getNumber(systemStats?.uptime, 0);
+            return [
+              { label: 'System Uptime', value: formatUptime(uptimeSeconds), color: 'blue' },
+              { label: 'Memory Usage', value: `${memoryPercent.toFixed(1)}%`, color: 'green' },
+              { label: 'Active Connections', value: activeConnections, color: 'purple' },
+              { label: 'Error Rate', value: `${errorRateValue.toFixed(2)}%`, color: errorRateValue > 5 ? 'red' : 'yellow' }
+            ].map((stat, index) => (
+              <motion.div
+                key={stat.label}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                className={`bg-white rounded-xl p-6 shadow-lg border-l-4 border-${stat.color}-500`}
+              >
+                <h3 className="text-sm font-medium text-gray-500 mb-2">{stat.label}</h3>
+                <p className={`text-2xl font-bold text-${stat.color}-600`}>{stat.value}</p>
+              </motion.div>
+            ));
+          })()}
         </div>
 
         {/* Settings Tabs */}

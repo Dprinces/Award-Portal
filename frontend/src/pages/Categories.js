@@ -2,39 +2,32 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Box,
   Grid,
   Card,
   CardContent,
-  Typography,
   Button,
   Chip,
   Alert,
   Container,
-  TextField,
-  InputAdornment,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
-  Skeleton,
 } from "@mui/material";
 import {
   Search as SearchIcon,
   HowToVote as VoteIcon,
   AccessTime as TimeIcon,
   People as PeopleIcon,
-  TrendingUp as TrendingIcon,
   FilterList as FilterIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../contexts/AuthContext";
 import api from "../services/api";
-import LoadingSpinner from "../components/common/LoadingSpinner";
 import { motion } from "framer-motion";
 
 const Categories = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
@@ -189,85 +182,15 @@ const Categories = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      {/* Hero Header Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
-        className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white"
-      >
-        {/* Background Pattern */}
-        <div className="absolute inset-0 bg-black/10">
-          <div
-            className="absolute inset-0 opacity-20"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-            }}
-          ></div>
+      {/* Compact Header */}
+      <Container maxWidth="xl" sx={{ py: 4 }}>
+        <div className="mb-6">
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Award Categories</h1>
+          <p className="text-gray-600 mt-2">Browse categories and vote for outstanding nominees.</p>
         </div>
+      </Container>
 
-        <Container maxWidth="lg" sx={{ position: "relative", py: 8 }}>
-          <div className="text-center space-y-6">
-            {/* Main Title */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-            >
-              <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent mb-4">
-                Award Categories
-              </h1>
-              <div className="w-24 h-1 bg-gradient-to-r from-yellow-400 to-orange-500 mx-auto rounded-full"></div>
-            </motion.div>
-
-            {/* Subtitle */}
-            <motion.p
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-              className="text-xl md:text-2xl text-blue-100 max-w-3xl mx-auto leading-relaxed"
-            >
-              Discover exceptional talent across diverse categories. Cast your
-              vote and celebrate excellence in our community.
-            </motion.p>
-
-            {/* Stats Cards */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.6 }}
-              className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12 max-w-4xl mx-auto"
-            >
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
-                <div className="text-3xl font-bold text-yellow-300">
-                  {categories?.length || 0}
-                </div>
-                <div className="text-blue-100 mt-1">Active Categories</div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
-                <div className="text-3xl font-bold text-green-300">
-                  {categories?.reduce(
-                    (total, cat) => total + (cat.nominees?.length || 0),
-                    0
-                  ) || 0}
-                </div>
-                <div className="text-blue-100 mt-1">Total Nominees</div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
-                <div className="text-3xl font-bold text-pink-300">
-                  {categoryStats?.reduce(
-                    (total, stat) => total + (stat.totalVotes || 0),
-                    0
-                  ) || 0}
-                </div>
-                <div className="text-blue-100 mt-1">Votes Cast</div>
-              </div>
-            </motion.div>
-          </div>
-        </Container>
-      </motion.div>
-
-      <Container maxWidth="lg" sx={{ py: 6 }}>
+      <Container maxWidth="xl" sx={{ py: 6 }}>
         {/* Search and Filters */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -337,9 +260,10 @@ const Categories = () => {
             const votingStatus = getVotingStatus(category);
             const stats = getCategoryStats(category._id);
             const canVote = isAuthenticated && votingStatus.status === "active";
+            const accentColor = category.color || "#3B82F6";
 
             return (
-              <Grid item xs={12} sm={6} lg={4} key={category._id}>
+              <Grid item xs={12} sm={6} lg={4} xl={3} key={category._id}>
                 <motion.div
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -367,7 +291,7 @@ const Categories = () => {
                         left: 0,
                         right: 0,
                         bottom: 0,
-                        background: "linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(147, 51, 234, 0.05) 100%)",
+                        background: `linear-gradient(135deg, ${accentColor}0D 0%, ${accentColor}1A 100%)`,
                         opacity: 0,
                         transition: "opacity 0.3s ease",
                         zIndex: 1,
@@ -380,27 +304,18 @@ const Categories = () => {
                   >
                     {/* Category Header */}
                     <div
-                      className="h-40 relative overflow-hidden"
+                      className="h-24 md:h-32 relative overflow-hidden"
                       style={{
-                        background: `linear-gradient(135deg, ${category.color || "#3B82F6"} 0%, ${category.color || "#3B82F6"}CC 50%, ${category.color || "#3B82F6"}DD 100%)`,
+                        background: `linear-gradient(135deg, ${accentColor} 0%, ${accentColor}CC 60%, ${accentColor}E6 100%)`,
                       }}
                     >
-                      <div className="absolute inset-0 bg-gradient-to-br from-black/5 via-transparent to-black/20"></div>
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent"></div>
-                      
-                      {/* Decorative Pattern */}
-                      <div className="absolute top-0 right-0 w-32 h-32 opacity-10">
-                        <div className="absolute inset-0 bg-white rounded-full transform translate-x-8 -translate-y-8"></div>
-                        <div className="absolute inset-0 bg-white rounded-full transform translate-x-12 -translate-y-4 scale-75"></div>
-                      </div>
-                      
+                      <div className="absolute inset-0 bg-white/10"></div>
+
                       <div className="relative h-full flex flex-col items-center justify-center text-white z-10">
-                        <div className="text-5xl mb-2 transform group-hover:scale-110 transition-transform duration-300">
+                        <div className="text-3xl md:text-4xl mb-1">
                           {category.icon || "🏆"}
                         </div>
-                        <div className="text-sm font-medium opacity-90 text-center px-4">
-                          Award Category
-                        </div>
+                        <div className="text-xs md:text-sm font-medium opacity-90 text-center px-4">Award Category</div>
                       </div>
                       
                       <Chip
@@ -427,94 +342,61 @@ const Categories = () => {
                       />
                     </div>
 
-                    <CardContent className="p-8 relative z-10">
+                    <CardContent className="p-4 md:p-6 relative z-10">
                       {/* Category Name */}
-                      <h3 className="text-2xl font-bold text-gray-900 mb-4 line-clamp-1 group-hover:text-blue-700 transition-colors duration-300">
+                      <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-3 line-clamp-1 group-hover:text-blue-700 transition-colors duration-300">
                         {category.name}
                       </h3>
 
                       {/* Description */}
-                      <p className="text-gray-600 text-sm mb-6 line-clamp-3 leading-relaxed min-h-[3.75rem]">
+                      <p className="text-gray-600 text-sm mb-4 line-clamp-2 leading-relaxed min-h-[2.5rem]">
                         {category.description || "Discover and vote for outstanding achievements in this category."}
                       </p>
 
-                      {/* Statistics */}
-                      <div className="grid grid-cols-2 gap-4 mb-6">
-                        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-2xl border border-blue-200/50">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
-                              <PeopleIcon className="text-white" fontSize="small" />
-                            </div>
-                            <div>
-                              <div className="text-lg font-bold text-blue-700">
-                                {category.nominees?.length || 0}
-                              </div>
-                              <div className="text-xs font-medium text-blue-600">
-                                Nominees
-                              </div>
-                            </div>
-                          </div>
+                      {/* Statistics (compact) */}
+                      <div className="flex items-center justify-between mb-4 text-sm">
+                        <div className="flex items-center gap-2 text-gray-700">
+                          <PeopleIcon fontSize="small" />
+                          <span>{category.nominees?.length || 0} nominees</span>
                         </div>
-                        
-                        <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-2xl border border-green-200/50">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center">
-                              <VoteIcon className="text-white" fontSize="small" />
-                            </div>
-                            <div>
-                              <div className="text-lg font-bold text-green-700">
-                                {stats.voteCount || 0}
-                              </div>
-                              <div className="text-xs font-medium text-green-600">
-                                Votes
-                              </div>
-                            </div>
-                          </div>
+                        <div className="flex items-center gap-2 text-gray-700">
+                          <VoteIcon fontSize="small" />
+                          <span>{stats.voteCount || 0} votes</span>
                         </div>
                       </div>
 
-                      {/* Voting Period */}
-                      {category.votingEndDate &&
-                        votingStatus.status === "active" && (
-                          <div className="flex items-center gap-3 mb-6 p-4 bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl border border-orange-200/50">
-                            <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
-                              <TimeIcon className="text-white" fontSize="small" />
-                            </div>
-                            <div>
-                              <div className="text-sm font-semibold text-orange-800">
-                                {getTimeRemaining(category.votingEndDate)}
-                              </div>
-                              <div className="text-xs text-orange-600">
-                                Time remaining
-                              </div>
-                            </div>
-                          </div>
-                        )}
+                      {/* Voting Period (compact) */}
+                      {category.votingEndDate && votingStatus.status === "active" && (
+                        <div className="flex items-center gap-2 mb-4 text-xs text-orange-700">
+                          <TimeIcon fontSize="small" />
+                          <span>{getTimeRemaining(category.votingEndDate)}</span>
+                        </div>
+                      )}
 
                       {/* Action Button */}
                       <Button
-                        variant={canVote ? "contained" : "outlined"}
-                        fullWidth
-                        disabled={!canVote}
-                        startIcon={<VoteIcon />}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleVoteClick(category._id);
-                        }}
-                        className="py-4 font-bold text-base shadow-lg"
+                       variant={canVote ? "contained" : "outlined"}
+                       fullWidth
+                       disabled={!canVote}
+                       startIcon={<VoteIcon />}
+                       onClick={(e) => {
+                         e.stopPropagation();
+                         handleVoteClick(category._id);
+                       }}
+                        className="py-2 md:py-3 font-bold text-sm md:text-base shadow-sm"
                         sx={{
                           borderRadius: 3,
                           textTransform: "none",
-                          fontSize: "1rem",
-                          fontWeight: 700,
+                          fontSize: { xs: "0.9rem", md: "1rem" },
+                          fontWeight: 600,
                           ...(canVote
                             ? {
-                                background: "linear-gradient(135deg, #3B82F6 0%, #1D4ED8 50%, #1E40AF 100%)",
-                                boxShadow: "0 8px 25px rgba(59, 130, 246, 0.3)",
+                                background: `linear-gradient(135deg, ${accentColor} 0%, ${accentColor}CC 60%, ${accentColor}E6 100%)`,
+                                boxShadow: `0 6px 20px ${accentColor}40`,
                                 "&:hover": {
-                                  background: "linear-gradient(135deg, #1D4ED8 0%, #1E40AF 50%, #1E3A8A 100%)",
-                                  boxShadow: "0 12px 35px rgba(59, 130, 246, 0.4)",
-                                  transform: "translateY(-2px)"
+                                  filter: "brightness(0.95)",
+                                  boxShadow: `0 10px 30px ${accentColor}59`,
+                                  transform: "translateY(-1px)"
                                 },
                               }
                             : {

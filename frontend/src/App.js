@@ -11,7 +11,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 // Components
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
-import LoadingSpinner from "./components/common/LoadingSpinner";
+// import LoadingSpinner from "./components/common/LoadingSpinner";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AdminRoute from "./components/auth/AdminRoute";
 import StudentRoute from "./components/auth/StudentRoute";
@@ -20,7 +20,7 @@ import StudentRoute from "./components/auth/StudentRoute";
 import Home from "./pages/Home";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
-import VerifyEmail from "./pages/auth/VerifyEmail";
+import RegistrationResult from "./pages/auth/RegistrationResult";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
 import Profile from "./pages/user/Profile";
@@ -75,7 +75,7 @@ function App() {
                   <Route path="/" element={<Home />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
-                  <Route path="/verify-email" element={<VerifyEmail />} />
+                  <Route path="/register-result" element={<RegistrationResult />} />
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
 
