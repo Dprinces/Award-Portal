@@ -111,7 +111,7 @@ const Navbar = () => {
             style={{
               background: "none",
               border: "none",
-              color: scrolled ? (theme === "dark" ? "#f8fafc" : "#333") : "white",
+              color: scrolled ? (theme === "dark" ? "#ffffff" : "#333") : "white",
               fontSize: "24px",
               cursor: "pointer",
               padding: "8px",
@@ -158,7 +158,7 @@ const Navbar = () => {
                   gap: "6px",
                   padding: "8px 16px",
                   textDecoration: "none",
-                  color: scrolled ? (theme === "dark" ? "#f8fafc" : "#333") : "white",
+                  color: scrolled ? (theme === "dark" ? "#ffffff" : "#333") : "white",
                   backgroundColor: isActivePath(item.path)
                     ? scrolled
                       ? (theme === "dark" ? "rgba(255,255,255,0.08)" : "rgba(102, 126, 234, 0.1)")
@@ -211,7 +211,7 @@ const Navbar = () => {
               background: "none",
               border: scrolled ? "1px solid rgba(102,126,234,0.4)" : "none",
               borderRadius: "8px",
-              color: scrolled ? (theme === "dark" ? "#f8fafc" : "#333") : "white",
+              color: scrolled ? (theme === "dark" ? "#ffffff" : "#333") : "white",
               cursor: "pointer",
               transition: "all 0.2s ease",
             }}
