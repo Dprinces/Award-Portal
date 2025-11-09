@@ -155,6 +155,37 @@ body {
   background-color: var(--gray-900);
 }
 
+/* Dark Mode Utility Overrides for Common Tailwind Classes */
+/* Ensure readable text and surfaces when dark mode is active, even if components lack explicit dark: classes */
+.dark .text-gray-900 { color: var(--gray-100) !important; }
+.dark .text-gray-800 { color: var(--gray-100) !important; }
+.dark .text-gray-700 { color: var(--gray-300) !important; }
+.dark .text-gray-600 { color: var(--gray-300) !important; }
+.dark .text-black { color: var(--gray-100) !important; }
+
+.dark .bg-white { background-color: var(--gray-800) !important; }
+.dark .bg-gray-50 { background-color: var(--gray-900) !important; }
+.dark .bg-gray-100 { background-color: var(--gray-800) !important; }
+.dark .bg-gray-200 { background-color: var(--gray-700) !important; }
+.dark .bg-white\/80 { background-color: rgba(30, 41, 59, 0.8) !important; }
+
+.dark .border-gray-100 { border-color: var(--gray-700) !important; }
+.dark .border-gray-200 { border-color: var(--gray-700) !important; }
+.dark .border-gray-300 { border-color: var(--gray-600) !important; }
+
+/* Buttons/Controls readability */
+.dark .hover\:bg-gray-100:hover { background-color: var(--gray-700) !important; }
+.dark .hover\:bg-gray-200:hover { background-color: var(--gray-600) !important; }
+
+/* Headings inside generic white cards without dark variants */
+.dark .bg-white h1,
+.dark .bg-white h2,
+.dark .bg-white h3,
+.dark .bg-white h4,
+.dark .bg-white h5,
+.dark .bg-white h6 { color: var(--gray-100) !important; }
+
+
 /* Typography */
 h1,
 h2,

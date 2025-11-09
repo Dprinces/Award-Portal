@@ -10,9 +10,12 @@ import {
   AdminPanelSettings,
   Home,
   Close as CloseIcon,
+  DarkMode as DarkModeIcon,
+  LightMode as LightModeIcon,
 } from "@mui/icons-material";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import { useTheme } from "../../contexts/ThemeContext";
 import { motion, AnimatePresence } from "framer-motion";
 import "./Navbar.css";
 
@@ -20,6 +23,7 @@ const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { theme, toggleTheme } = useTheme();
 
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -83,10 +87,12 @@ const Navbar = () => {
           right: 0,
           zIndex: 1000,
           background: scrolled
-            ? "rgba(255, 255, 255, 0.95)"
+            ? (theme === "dark" ? "rgba(17,24,39,0.9)" : "rgba(255, 255, 255, 0.95)")
             : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
           backdropFilter: scrolled ? "blur(10px)" : "none",
-          borderBottom: scrolled ? "1px solid rgba(0,0,0,0.1)" : "none",
+          borderBottom: scrolled
+            ? (theme === "dark" ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(0,0,0,0.1)")
+            : "none",
           boxShadow: scrolled
             ? "0 4px 20px rgba(0,0,0,0.1)"
             : "0 2px 10px rgba(0,0,0,0.1)",
@@ -105,7 +111,7 @@ const Navbar = () => {
             style={{
               background: "none",
               border: "none",
-              color: scrolled ? "#333" : "white",
+              color: scrolled ? (theme === "dark" ? "#f8fafc" : "#333") : "white",
               fontSize: "24px",
               cursor: "pointer",
               padding: "8px",
@@ -152,10 +158,10 @@ const Navbar = () => {
                   gap: "6px",
                   padding: "8px 16px",
                   textDecoration: "none",
-                  color: scrolled ? "#333" : "white",
+                  color: scrolled ? (theme === "dark" ? "#f8fafc" : "#333") : "white",
                   backgroundColor: isActivePath(item.path)
                     ? scrolled
-                      ? "rgba(102, 126, 234, 0.1)"
+                      ? (theme === "dark" ? "rgba(255,255,255,0.08)" : "rgba(102, 126, 234, 0.1)")
                       : "rgba(255, 255, 255, 0.2)"
                     : "transparent",
                   borderRadius: "8px",
@@ -166,7 +172,7 @@ const Navbar = () => {
                 onMouseEnter={(e) => {
                   if (!isActivePath(item.path)) {
                     e.target.style.backgroundColor = scrolled
-                      ? "rgba(102, 126, 234, 0.05)"
+                      ? (theme === "dark" ? "rgba(255,255,255,0.06)" : "rgba(102, 126, 234, 0.05)")
                       : "rgba(255, 255, 255, 0.1)";
                   }
                 }}
@@ -182,6 +188,7 @@ const Navbar = () => {
             );
           })}
 
+
           {/* Primary CTA */}
           <Link
             to="/vote"
@@ -191,6 +198,33 @@ const Navbar = () => {
             <HowToVote style={{ fontSize: "18px" }} />
             Vote Now
           </Link>
+          {/* Theme Toggle */}
+          <button
+            onClick={toggleTheme}
+            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            title={theme === "dark" ? "Light mode" : "Dark mode"}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "8px 12px",
+              background: "none",
+              border: scrolled ? "1px solid rgba(102,126,234,0.4)" : "none",
+              borderRadius: "8px",
+              color: scrolled ? (theme === "dark" ? "#f8fafc" : "#333") : "white",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+            }}
+          >
+            {theme === "dark" ? (
+              <LightModeIcon style={{ fontSize: "18px" }} />
+            ) : (
+              <DarkModeIcon style={{ fontSize: "18px" }} />
+            )}
+            <span style={{ fontSize: "0.9rem", fontWeight: 500 }}>
+              {theme === "dark" ? "Light" : "Dark"}
+            </span>
+          </button>
 
           {/* User Menu */}
           {user && (
@@ -204,13 +238,13 @@ const Navbar = () => {
                   padding: "8px 12px",
                   background: "none",
                   border: "none",
-                  color: scrolled ? "#333" : "white",
+                  color: scrolled ? (theme === "dark" ? "#f8fafc" : "#333") : "white",
                   borderRadius: "8px",
                   cursor: "pointer",
                   transition: "all 0.3s ease",
                   backgroundColor: showUserMenu
                     ? scrolled
-                      ? "rgba(102, 126, 234, 0.1)"
+                      ? (theme === "dark" ? "rgba(255,255,255,0.08)" : "rgba(102, 126, 234, 0.1)")
                       : "rgba(255, 255, 255, 0.2)"
                     : "transparent",
                 }}
@@ -413,6 +447,26 @@ const Navbar = () => {
                     }}
                   >
                     <CloseIcon />
+                  </button>
+                </div>
+                {/* Mobile Theme Toggle */}
+                <div style={{ marginTop: "8px" }}>
+                  <button
+                    onClick={toggleTheme}
+                    aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+                    className="mobile-cta"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "8px",
+                    }}
+                  >
+                    {theme === "dark" ? (
+                      <LightModeIcon style={{ fontSize: "20px" }} />
+                    ) : (
+                      <DarkModeIcon style={{ fontSize: "20px" }} />
+                    )}
+                    {theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
                   </button>
                 </div>
                 {user && (
